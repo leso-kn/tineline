@@ -18,10 +18,10 @@ const RootInfo = {
 };
 
 const EventInfo = {
-    NAME: 1, NAME_ALT: 14,
+    NAME: 1, NAME_ALT: 17,
 
-    DURATION:      2, DURATION_ALT:      14,
-    DURATION_UNIT: 3, DURATION_UNIT_ALT: 15,
+    DURATION:      14, DURATION_ALT:      2,
+    DURATION_UNIT: 15, DURATION_UNIT_ALT: 3,
 
     START_DAY:     4, START_MONTH:        5,  START_YEAR: 6,
     END_DAY:       7, END_MONTH:          8,  END_YEAR:   9,
@@ -34,6 +34,45 @@ const EventInfo = {
 
 //
 
+function dateAddNOfUnit(date, n, unit)
+{
+    switch (unit[0])
+    {
+        case 'y':
+        date.setHours(
+            date.getHours() + 365 * 24 * n);
+        break;
+
+        case 'm':
+        if (Math.floor(n) == n)
+        {
+            date.setMonth(
+                date.getMonth() + n);
+        }
+        else
+        {
+            date.setHours(
+                date.getHours() + 30.5 * 24 * n);
+        }
+        break;
+
+        case 'w':
+        date.setHours(
+            date.getHours() + 7 * 24 * n);
+        break;
+
+        case 'd':
+        date.setHours(
+            date.getHours() + 24 * n);
+        break;
+
+        case 'h':
+        date.setHours(
+            date.getHours() + n);
+        break;
+    }
+}
+
 function pad(s, digits = 2, char = '0')
 {
     s = s.toString();
@@ -44,12 +83,12 @@ function pad(s, digits = 2, char = '0')
     return s;
 }
 
-timeline.start = new Date(rootInfo[RootInfo.START_YEAR] + '-' + pad(rootInfo[RootInfo.START_MONTH]) + '-' + pad(rootInfo[RootInfo.START_DAY]));
+timeline.start = new Date(rootInfo[RootInfo.START_YEAR] + '-' + pad(rootInfo[RootInfo.START_MONTH]) + '-' + pad(rootInfo[RootInfo.START_DAY]) + ' 00:00:00.000');
 
 if (rootInfo[RootInfo.END_DAY])
 {
     // End date given
-    timeline.end = new Date(rootInfo[RootInfo.END_YEAR] + '-' + pad(rootInfo[RootInfo.END_MONTH]) + '-' + pad(rootInfo[RootInfo.END_DAY]))
+    timeline.end = new Date(rootInfo[RootInfo.END_YEAR] + '-' + pad(rootInfo[RootInfo.END_MONTH]) + '-' + pad(rootInfo[RootInfo.END_DAY]) + ' 00:00:00.000')
 }
 else if (rootInfo[RootInfo.DURATION] || rootInfo[RootInfo.DURATION_ALT])
 {
@@ -59,41 +98,7 @@ else if (rootInfo[RootInfo.DURATION] || rootInfo[RootInfo.DURATION_ALT])
     let duration = parseFloat(rootInfo[RootInfo.DURATION] || rootInfo[RootInfo.DURATION_ALT]);
     let durationUnit = rootInfo[RootInfo.DURATION_UNIT] || rootInfo[RootInfo.DURATION_UNIT_ALT];
 
-    switch (durationUnit[0])
-    {
-        case 'y':
-        timeline.end.setUTCHours(
-            timeline.end.getUTCHours() + 365 * 24 * duration);
-        break;
-
-        case 'm':
-        if (Math.floor(duration) == duration)
-        {
-            timeline.end.setUTCMonth(
-                timeline.end.getUTCMonth() + duration);
-        }
-        else
-        {
-            timeline.end.setUTCHours(
-                timeline.end.getUTCHours() + 30.5 * 24 * duration);
-        }
-        break;
-
-        case 'w':
-        timeline.end.setUTCHours(
-            timeline.end.getUTCHours() + 7 * 24 * duration);
-        break;
-
-        case 'd':
-        timeline.end.setUTCHours(
-            timeline.end.getUTCHours() + 24 * duration);
-        break;
-
-        case 'h':
-        timeline.end.setUTCHours(
-            timeline.end.getUTCHours() + duration);
-        break;
-    }
+    dateAddNOfUnit(timeline.end, duration, durationUnit);
 }
 
 timeline.duration = (timeline.end - timeline.start) / 3600000 / 24;
@@ -117,8 +122,8 @@ for (let eventInfo of events)
     {
         // Start date given
         let d = parseInt(eventInfo[EventInfo.START_DAY]);
-        let m = parseInt(eventInfo[EventInfo.START_MONTH]) - 1 || datePrev.getUTCMonth() + (d < datePrev.getUTCDate());
-        let y = parseInt(eventInfo[EventInfo.START_YEAR])      || datePrev.getUTCFullYear() + (m < datePrev.getUTCMonth());
+        let m = parseInt(eventInfo[EventInfo.START_MONTH]) - 1 || datePrev.getMonth() + (d < datePrev.getDate());
+        let y = parseInt(eventInfo[EventInfo.START_YEAR])      || datePrev.getFullYear() + (m < datePrev.getMonth());
 
         event.start = new Date("2000-01-01 00:00:00.000");
         event.start.setFullYear(y);
@@ -127,15 +132,24 @@ for (let eventInfo of events)
     }
     else
     {
-        event.start = dateNext;
+        event.start = new Date(dateNext);
+
+        if (eventInfo[EventInfo.DURATION] && eventInfo[EventInfo.DURATION_ALT])
+        {
+            // Start delay given (in fields DURATION[_UNIT]_ALT)
+            let delay = eventInfo[EventInfo.DURATION_ALT];
+            let delayUnit = eventInfo[EventInfo.DURATION_UNIT_ALT];
+    
+            dateAddNOfUnit(event.start, delay, delayUnit);
+        }
     }
 
     if (eventInfo[EventInfo.END_DAY])
     {
         // End date given
         let d = parseInt(eventInfo[EventInfo.END_DAY]);
-        let m = parseInt(eventInfo[EventInfo.END_MONTH]) - 1 || event.start.getUTCMonth() + (d < event.start.getUTCDate());
-        let y = parseInt(eventInfo[EventInfo.END_YEAR])      || event.start.getUTCFullYear() + (m < event.start.getUTCMonth());
+        let m = parseInt(eventInfo[EventInfo.END_MONTH]) - 1 || event.start.getMonth() + (d < event.start.getDate());
+        let y = parseInt(eventInfo[EventInfo.END_YEAR])      || event.start.getFullYear() + (m < event.start.getMonth());
 
         event.end = new Date("2000-01-01 00:00:00.000");
         event.end.setFullYear(y);
@@ -149,8 +163,8 @@ for (let eventInfo of events)
     if (eventInfo[EventInfo.START_HOUR])
     {
         // Start time given
-        event.start.setUTCHours(parseInt(eventInfo[EventInfo.START_HOUR]));
-        event.start.setUTCMinutes(parseInt(eventInfo[EventInfo.START_MINUTE]));
+        event.start.setHours(parseInt(eventInfo[EventInfo.START_HOUR]));
+        event.start.setMinutes(parseInt(eventInfo[EventInfo.START_MINUTE]));
 
         if (!duration && !eventInfo[EventInfo.END_HOUR] && !event.end)
         {
@@ -164,57 +178,23 @@ for (let eventInfo of events)
     {
         // End time given
         event.end = new Date(event.start);
-        event.end.setUTCHours(parseInt(eventInfo[EventInfo.END_HOUR]));
-        event.end.setUTCMinutes(parseInt(eventInfo[EventInfo.END_MINUTE]));
+        event.end.setHours(parseInt(eventInfo[EventInfo.END_HOUR]));
+        event.end.setMinutes(parseInt(eventInfo[EventInfo.END_MINUTE]));
     }
 
     if (duration)
     {
         // Duration given
         event.end = new Date(event.start);
-
         duration = parseFloat(duration);
-        switch (durationUnit[0])
-        {
-            case 'y':
-            event.end.setUTCHours(
-                event.end.getUTCHours() + 365 * 24 * duration);
-            break;
 
-            case 'm':
-            if (Math.floor(duration) == duration)
-            {
-                event.end.setUTCMonth(
-                    event.end.getUTCMonth() + duration);
-            }
-            else
-            {
-                event.end.setUTCHours(
-                    event.end.getUTCHours() + 30.5 * 24 * duration);
-            }
-            break;
-
-            case 'w':
-            event.end.setUTCHours(
-                event.end.getUTCHours() + 7 * 24 * duration);
-            break;
-
-            case 'd':
-            event.end.setUTCHours(
-                event.end.getUTCHours() + 24 * duration);
-            break;
-
-            case 'h':
-            event.end.setUTCHours(
-                event.end.getUTCHours() + duration);
-            break;
-        }
+        dateAddNOfUnit(event.end, duration, durationUnit);
     }
 
     if (!event.end)
     {
         event.end = new Date(event.start)
-        event.end.setUTCDate(event.end.getUTCDate() + 1);
+        event.end.setDate(event.end.getDate() + 1);
     }
 
     if (!event.color)
@@ -237,16 +217,11 @@ for (let eventInfo of events)
 
 let html = '<div class="timelinew"><div class="timeline" id="el_timeline">';
 
-//html += '<pre>'+JSON.stringify(timeline.events, null, '  ')+'</pre>';
-
-/*for (let i in events[0])
-{ html += i + ': ' + events[0][i] + '</br>'; }*/
-
 let j = 0;
 let layers = 0;
 
 // Render weeks
-for (let date = new Date(timeline.start); date <= timeline.end; date.setUTCDate(date.getUTCDate() + 1))
+for (let date = new Date(timeline.start); date <= timeline.end; date.setDate(date.getDate() + 1))
 {
     if (date.getDay() == 1 || date - timeline.start == 0 || date - timeline.end == 0)
     {
@@ -256,6 +231,22 @@ for (let date = new Date(timeline.start); date <= timeline.end; date.setUTCDate(
              +  '">' + date.getDate() + '.' + (date.getMonth() + 1) + '.</span>';
     }
 }
+
+// Render 'now' and 'today' indicators
+let now = new Date();
+let today = new Date(now);
+today.setHours(0);
+today.setMinutes(0);
+today.setSeconds(0);
+today.setMilliseconds(0);
+
+html += '<div class="today" id="el_today" style="'
+     +  'top: ' + (today - timeline.start) / 36000 / 24 / timeline.duration + '%'
+     +  '"></div>';
+
+html += '<span class="bar-now" id="el_now" style="'
+     +  'top: ' + (now - timeline.start) / 36000 / 24 / timeline.duration + '%'
+     +  '"></span>';
 
 // Render events
 for (let event of timeline.events)
@@ -335,6 +326,20 @@ document.body.addEventListener("wheel", (e) => {
     }, 200);
 });
 
+// Every 5 minutes
+setInterval(() =>
+{
+    let now = new Date();
+    let today = new Date(now);
+    today.setHours(0);
+    today.setMinutes(0);
+    today.setSeconds(0);
+    today.setMilliseconds(0);
+
+    el_today.style.top = (today - timeline.start) / 36000 / 24 / timeline.duration + '%';
+    el_now.style.top = (now - timeline.start) / 36000 / 24 / timeline.duration + '%';
+}, 300000);
+
 function css()
 {
     return "<style>\
@@ -369,6 +374,7 @@ body\
     width:12px;\
     height: calc(var(--duration) * var(--day-width));\
     background: repeating-linear-gradient(0deg, rgba(114,114,114,.15), rgba(114,114,114,.15) var(--day-width), rgba(114,114,114,.07) var(--day-width), rgba(114,114,114,.07) calc(var(--day-width) * 2));\
+    background-position: 0 -1px;\
 \
     --day-width: 3vw;\
 \
@@ -400,7 +406,7 @@ body\
     border-top: 2px solid rgba(96,96,96,.14);\
     color: rgba(127,127,127,.9);\
     right: calc(130% * -4);\
-    transform: translateX(-2px);\
+    transform: translateX(-2px) translateY(-1px);\
     width: 80vh;\
 \
     writing-mode: vertical-rl;\
@@ -414,6 +420,32 @@ body\
     transform: translateX(-100%);\
     border: none;\
     border-bottom: 2px solid rgba(96,96,96,.14);\
+}\
+.bar-now\
+{\
+    position: absolute;\
+\
+    padding-top: 4px;\
+\
+    border-top: 1px solid red;\
+    right: calc(130% * -2);\
+    transform: translateX(-2px);\
+    width: calc(80vh - 130% * 2);\
+}\
+.vscode-dark .bar-now\
+{\
+    border-top-color: #c24;\
+}\
+.today\
+{\
+    position: absolute;\
+\
+    background-color: rgba(154,154,154,.1);\
+    height: var(--day-width);\
+    right: calc(130% * -2);\
+    transform: translateX(-2px);\
+    transition: .4s top ease-in-out;\
+    width: calc(80vh - 130% * 2);\
 }\
 </style>";
 }
