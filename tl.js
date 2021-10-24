@@ -5,7 +5,7 @@ let timeline = {};
 
 let rootInfo = content.match(/#timeline +(?:from +|start +|begin +)?(\d+)\.(\d+)\.(\d+) +(?:(?:(?:to +|until +|end +|- +)(\d+)\.(\d+)\.(\d+))|(?:for +([\d\.]+) +(.+)|\(([\d\.]+)([a-z])\)))/);
 
-let events   = [...content.matchAll(/^[*-~+] +(?:(.*) +\((?:([\d\.]+)([a-z])|(\d+)\.(?:(\d+)\.(?:(\d+))?)?)?(?: - (\d+)\.(?:(\d+)\.(?:(\d+))?)?| *(\d+):(\d+)(?: - (\d+):(\d+))?)?(?: ([\d\.]+)([a-z]))?\)(?: (\S+))?|(.+))/gm)];
+let events   = [...content.matchAll(/^[*-~+] +(?:(.*) +\((?:([\d\.]+)([a-z])|(\d+)\.(?:(\d+)\.(?:(\d+))?)?)?(?: - (\d+)\.(?:(\d+)\.(?:(\d+))?)?| *(\d+):(\d+)(?: - (\d+):(\d+))?)?(?: ([\d\.]+)([a-z]))?\)(?: (?!\!)(\S+))?|(.+))((?: +\!.+)*)/gm)];
 
 //
 
@@ -29,7 +29,8 @@ const EventInfo = {
     START_HOUR:   10, START_MINUTE:      11,
     END_HOUR:     12, END_MINUTE:        13,
 
-    COLOR:        16
+    COLOR:        16,
+    FLAGS:        18
 };
 
 //
@@ -73,6 +74,21 @@ function dateAddNOfUnit(date, n, unit)
     }
 }
 
+function shiftDependants(target, minutes)
+{
+    for (let dep of target.dependants)
+    {
+        dep.start = new Date(dep.start);
+        dep.end = new Date(dep.end);
+
+        dep.start.setMinutes(dep.start.getMinutes() + minutes);
+        dep.end.setMinutes(dep.end.getMinutes() + minutes);
+
+        if (dep.dependants)
+        { shiftDependants(dep, minutes); }
+    }
+}
+
 function pad(s, digits = 2, char = '0')
 {
     s = s.toString();
@@ -107,6 +123,7 @@ timeline.duration = (timeline.end - timeline.start) / 3600000 / 24;
 
 let datePrev = timeline.start;
 let dateNext = timeline.start;
+let lastEvent = {};
 let colorNext = .6;
 
 timeline.events = [];
@@ -133,6 +150,9 @@ for (let eventInfo of events)
     else
     {
         event.start = new Date(dateNext);
+        if (!lastEvent.dependants) { lastEvent.dependants = []; }
+
+        lastEvent.dependants.push(event);
 
         if (eventInfo[EventInfo.DURATION] && eventInfo[EventInfo.DURATION_ALT])
         {
@@ -208,17 +228,57 @@ for (let eventInfo of events)
     
     event.duration = (event.end - event.start) / 3600000 / 24;
 
+    event.flags = eventInfo[EventInfo.FLAGS] ?
+                  eventInfo[EventInfo.FLAGS].split(' !').slice(1) :
+                  [];
+    
+    if (event.flags.indexOf('solo') >= 0)
+    {
+        // Split previous overlapping events
+        for (let i = 0; i < timeline.events.length; i++)
+        {
+            let other = timeline.events[i];
+
+            if (event.start >= other.start && event.start < other.end
+             && !(other.flags && other.flags.indexOf('solo') >= 0))
+            {
+                let clone = JSON.parse(JSON.stringify(other));
+                other.end = event.start;
+                other.duration = (other.end - other.start) / 3600000 / 24;
+
+                clone.start = event.end;
+                clone.end = new Date(clone.end);
+                clone.end.setMinutes(clone.end.getMinutes() + (event.end - event.start) / 60000);
+
+                clone.dependants = other.dependants || [];
+                other.dependants = [];
+
+                shiftDependants(clone, (event.end - event.start) / 60000);
+
+                clone.duration = (clone.end - clone.start) / 3600000 / 24;
+                clone.flags.push('_part');
+
+                //
+
+                timeline.events.splice(i + 1, 0, clone);
+                other.dependants.push(clone);
+
+                if (!event.virtualLayerSources) { event.virtualLayerSources = []; }
+                event.virtualLayerSources.push(other);
+            }
+        }
+    }
+
     //
 
     timeline.events.push(event);
     dateNext = event.end;
     datePrev = event.start;
+
+    lastEvent = event;
 }
 
 let html = '<div class="timelinew"><div class="timeline" id="el_timeline">';
-
-let j = 0;
-let layers = 0;
 
 // Render weeks
 for (let date = new Date(timeline.start); date <= timeline.end; date.setDate(date.getDate() + 1))
@@ -248,26 +308,48 @@ html += '<span class="bar-now" id="el_now" style="'
      +  'top: ' + (now - timeline.start) / 36000 / 24 / timeline.duration + '%'
      +  '"></span>';
 
+let j = 0;
+let layers = 0;
+
 // Render events
 for (let event of timeline.events)
 {
     let layer = 0;
 
-    for (let i = 0; i < j; i++)
-    {
-        let other = timeline.events[i];
+    let isPart = event.flags.indexOf('_part') >= 0;
 
-        if (other.layer == layer
-         && (
-            (event.start >= other.start && event.start < other.end)
-         || (other.start >= event.start && other.start < event.end)
-         ))
-        { layer++; }
+    if (isPart)
+    {
+        layer = timeline.events[j-1].layer;
+    }
+    else
+    {
+        for (let vls of (event.virtualLayerSources || []))
+        {
+            if (vls.layer == layer)
+            { layer++; }
+        }
+
+        for (let i = 0; i < j; i++)
+        {
+            let other = timeline.events[i];
+
+            if (
+                (other.layer == layer
+             || (other.layer > layer && other.flags.indexOf('solo') >= 0)
+             ) && (
+                (event.start >= other.start && event.start < other.end)
+             || (other.start >= event.start && other.start < event.end)
+            ))
+            { layer = other.layer + 1; }
+        }
     }
 
     event.layer = layer;
 
-    html += '<span class="event" style="'
+    html += '<span class="event'
+         +  (isPart ? ' part' : '')
+         + '" style="'
          +  'top: ' + (event.start - timeline.start) / 36000 / 24 / timeline.duration + '%; '
          +  'height: ' + (event.duration * 100 / timeline.duration) + '%; '
          +  '--layer: ' + layer + ';'
@@ -396,6 +478,10 @@ body\
 \
     right: calc(130% * var(--layer) * (var(--label-shift)));\
     left: 100%;\
+}\
+.event.part:after\
+{\
+    content: '';\
 }\
 .bar\
 {\
