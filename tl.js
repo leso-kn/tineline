@@ -82,9 +82,10 @@ function shiftDependants(target, minutes)
         dep.end = new Date(dep.end);
 
         dep.start.setMinutes(dep.start.getMinutes() + minutes);
-        dep.end.setMinutes(dep.end.getMinutes() + minutes);
+        if (!dep.endFixed)
+        { dep.end.setMinutes(dep.end.getMinutes() + minutes); }
 
-        if (dep.dependants)
+        if (!dep.endFixed && dep.dependants)
         { shiftDependants(dep, minutes); }
     }
 }
@@ -175,6 +176,8 @@ for (let eventInfo of events)
         event.end.setFullYear(y);
         event.end.setMonth(m);
         event.end.setDate(d);
+
+        event.endFixed = true;
     }
 
     let duration = eventInfo[EventInfo.DURATION] || eventInfo[EventInfo.DURATION_ALT];
@@ -248,12 +251,13 @@ for (let eventInfo of events)
 
                 clone.start = event.end;
                 clone.end = new Date(clone.end);
-                clone.end.setMinutes(clone.end.getMinutes() + (event.end - event.start) / 60000);
+                clone.end.setMinutes(clone.end.getMinutes() + (event.end - event.start) / 60000 * !clone.endFixed);
 
                 clone.dependants = other.dependants || [];
                 other.dependants = [];
 
-                shiftDependants(clone, (event.end - event.start) / 60000);
+                if (!clone.endFixed)
+                { shiftDependants(clone, (event.end - event.start) / 60000); }
 
                 clone.duration = (clone.end - clone.start) / 3600000 / 24;
                 clone.flags.push('_part');
