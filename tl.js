@@ -383,6 +383,9 @@ document.body.innerHTML = html;
 var zoom = window.localStorage.getItem('zoom') || 3;
 var updateDBtout = null;
 
+var minZoom = 95 / timeline.duration;
+var maxZoom = timeline.duration < 30 ? 300 / timeline.duration : 4;
+
 el_timeline.style.setProperty('--label-shift', layers);
 el_timeline.style.setProperty('--duration', timeline.duration);
 el_timeline.style.setProperty('--day-width', zoom + 'vw');
@@ -399,7 +402,7 @@ function onScroll(e) {
         let bcr = el_timeline.getBoundingClientRect();
         let oldZoom = zoom;
 
-        zoom = Math.min(timeline.duration / 7, Math.max(1, zoom - zoom * e.deltaY / 300));
+        zoom = Math.min(maxZoom, Math.max(minZoom, zoom - zoom * e.deltaY / 300));
         el_timeline.style.setProperty('--day-width', zoom + 'vw');
 
         el_timeline.parentNode.scrollBy({
