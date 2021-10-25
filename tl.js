@@ -304,12 +304,16 @@ today.setMinutes(0);
 today.setSeconds(0);
 today.setMilliseconds(0);
 
+let running = now >= timeline.start && now <= timeline.end;
+
 html += '<div class="today" id="el_today" style="'
-     +  'top: ' + (today - timeline.start) / 36000 / 24 / timeline.duration + '%'
+     +  'top: ' + (today - timeline.start) / 36000 / 24 / timeline.duration + '%;'
+     +  (!running ? 'display:none;' : '')
      +  '"></div>';
 
 html += '<span class="bar-now" id="el_now" style="'
-     +  'top: ' + (now - timeline.start) / 36000 / 24 / timeline.duration + '%'
+     +  'top: ' + (now - timeline.start) / 36000 / 24 / timeline.duration + '%;'
+     +  (!running ? 'display:none;' : '')
      +  '"></span>';
 
 let j = 0;
@@ -416,15 +420,28 @@ document.body.addEventListener("wheel", (e) => {
 setInterval(() =>
 {
     let now = new Date();
-    let today = new Date(now);
-    today.setHours(0);
-    today.setMinutes(0);
-    today.setSeconds(0);
-    today.setMilliseconds(0);
+    let running = now >= timeline.start && now <= timeline.end;
 
-    el_today.style.top = (today - timeline.start) / 36000 / 24 / timeline.duration + '%';
-    el_now.style.top = (now - timeline.start) / 36000 / 24 / timeline.duration + '%';
-}, 300000);
+    if (running)
+    {
+        let today = new Date(now);
+        today.setHours(0);
+        today.setMinutes(0);
+        today.setSeconds(0);
+        today.setMilliseconds(0);
+
+        el_today.style.top = (today - timeline.start) / 36000 / 24 / timeline.duration + '%';
+        el_now.style.top = (now - timeline.start) / 36000 / 24 / timeline.duration + '%';
+
+        el_today.style.removeProperty('display');
+        el_today.style.removeProperty('display');
+    }
+    else
+    {
+        el_today.style.display = 'none';
+        el_now.style.display = 'none';
+    }
+}, 3000);
 
 function css()
 {
