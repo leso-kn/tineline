@@ -1,4 +1,4 @@
-[![Demo: View In Browser](https://img.shields.io/static/v1?label=Demo&message=View%20in%20Browser&color=blue)](https://tineline.github.io/example.htm)
+[![Demo: View In Browser](https://img.shields.io/static/v1?label=Demo&message=View%20in%20Browser&color=blue)](https://leso-kn.github.io/tineline/example.htm)
 
 # Tineline 🕒
 
@@ -22,7 +22,7 @@ Schedules consists of a single html file with a `<script>` tag in the last line.
 * 'Today' is highlighted
   * Red line indicates current time of day
 * Native horizontal scrolling
-* Zooming
+* Zooming (SHIFT+Scroll)
 
 ## Getting started
 
@@ -31,7 +31,7 @@ Let's have a look at the notation!
 This is the source code of the timeline you see above:
 
 ```md
-#timeline from 21.4.2021 for 1 months
+#timeline from 21.4.2021 for 1 month
 
 * Be productive (2d 1.5w) orange
 
@@ -197,7 +197,7 @@ Given that we used the `.htm` file extension, the schedule can now be opened in 
 
 [tl.js](tl.js) will read the contents of the file and render it in the form of a horizontal timeline.
 
-Have a look at [example.htm](example.htm) and its rendered representation in the [online demo](https://tineline.github.io/example.htm) to see everything in action!
+Have a look at [example.htm](example.htm) and its rendered representation in the [online demo](https://leso-kn.github.io/tineline/example.htm) to see everything in action!
 
 ## Future plans
 
@@ -206,6 +206,7 @@ Have a look at [example.htm](example.htm) and its rendered representation in the
   * Syntax highlighting for *.tl files  
     (for now, use Markdown highlighting)
   * Live Preview (based on existing HTML preview)
+* Better mobile rendering
 
 ## Troubleshooting
 
