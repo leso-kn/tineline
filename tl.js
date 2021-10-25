@@ -393,11 +393,12 @@ el_timeline.parentNode.scroll({
     behaviour: 'auto'
 }),1);
 
-document.body.addEventListener("wheel", (e) => {
-    let bcr = el_timeline.getBoundingClientRect();
-    if (e.getModifierState('Shift'))
+function onScroll(e) {
+    if (e.deltaY && e.getModifierState('Shift'))
     {
-        let oldZoom = zoom
+        let bcr = el_timeline.getBoundingClientRect();
+        let oldZoom = zoom;
+
         zoom = Math.min(timeline.duration / 7, Math.max(1, zoom - zoom * e.deltaY / 300));
         el_timeline.style.setProperty('--day-width', zoom + 'vw');
 
@@ -414,7 +415,10 @@ document.body.addEventListener("wheel", (e) => {
         window.localStorage.setItem('zoom', zoom);
         window.localStorage.setItem('x', el_timeline.parentNode.scrollTop);
     }, 200);
-});
+};
+
+document.body.addEventListener("wheel", onScroll);
+el_timeline.parentNode.addEventListener("scroll", onScroll);
 
 // Every 5 minutes
 setInterval(() =>
