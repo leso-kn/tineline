@@ -63,7 +63,7 @@ The next section will give a detailed overview over all features of the format.
 
 ## A Complete Guide
 
-As you can see in the example above, schedule files begin by setting the starting date and duration of the timeline.
+As you can see in the example above, Tineline files begin by setting the starting date and duration of the schedule.
 
 Instead of a duration, we could also give it a fixed ending date, like this:
 
