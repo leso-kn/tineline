@@ -193,6 +193,13 @@ This can be done by putting a `<script>` tag in the last line of the schedule fi
 <script src="tl.js"></script>
 ```
 
+Variant B: You may also include the script directly from Github:
+
+```md
+...
+<script src="https://leso-kn.github.io/tineline/tl.js"></script>
+```
+
 Given that we used the `.htm` file extension, the schedule can now be opened in any modern web browser.
 
 [tl.js](tl.js) will read the contents of the file and render it in the form of a horizontal timeline.
