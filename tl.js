@@ -163,7 +163,7 @@ for (let eventInfo of events)
         if (eventInfo[EventInfo.DURATION] && eventInfo[EventInfo.DURATION_ALT])
         {
             // Start delay given (in fields DURATION[_UNIT]_ALT)
-            let delay = eventInfo[EventInfo.DURATION_ALT];
+            let delay = parseFloat(eventInfo[EventInfo.DURATION_ALT]);
             let delayUnit = eventInfo[EventInfo.DURATION_UNIT_ALT];
     
             dateAddNOfUnit(event.start, delay, delayUnit);
