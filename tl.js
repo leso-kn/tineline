@@ -5,7 +5,7 @@ let timeline = {};
 
 let rootInfo = content.match(/#timeline +(?:from +|start +|begin +)?(\d+)\.(\d+)\.(\d+) +(?:(?:(?:to +|until +|end +|- +)(\d+)\.(\d+)\.(\d+))|(?:for +([\d\.]+) +(.+)|\(([\d\.]+)([a-z])\)))/);
 
-let events   = [...content.matchAll(/^[*-~+] +(?:(.*) +\((?:([\d\.]+)([a-z])|(\d+)\.(?:(\d+)\.(?:(\d+))?)?)?(?: - (\d+)\.(?:(\d+)\.(?:(\d+))?)?| *(\d+):(\d+)(?: - (\d+):(\d+))?)?(?: ([\d\.]+)([a-z]))?\)(?: (?!\!)(\S+))?|(.+))((?: +\!.+)*)/gm)];
+let events   = [...content.matchAll(/^[*-~+] +(?:(.*) +\((?:([\d\.]+)([a-zA-Z])|(\d+)\.(?:(\d+)\.(?:(\d+))?)?)?(?: - (\d+)\.(?:(\d+)\.(?:(\d+))?)?| *(\d+):(\d+)(?: - (\d+):(\d+))?)?(?: ([\d\.]+)([a-zA-Z]))?\)(?: (?!\!)(\S+))?|(.+))((?: +\!.+)*)/gm)];
 
 //
 
@@ -70,6 +70,11 @@ function dateAddNOfUnit(date, n, unit)
         case 'h':
         date.setHours(
             date.getHours() + n);
+        break;
+
+        case 'M':
+        date.setMinutes(
+            date.getMinutes() + n);
         break;
     }
 }
