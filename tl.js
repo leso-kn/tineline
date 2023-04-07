@@ -385,11 +385,12 @@ document.body.innerHTML = html;
 
 //
 
-var zoom = window.localStorage.getItem('zoom') || 3;
 var updateDBtout = null;
 
 var minZoom = 95 / timeline.duration;
 var maxZoom = timeline.duration < 30 ? 300 / timeline.duration : 4;
+
+var zoom = window.localStorage.getItem('zoom') || Math.max(minZoom, 3);
 
 el_timeline.style.setProperty('--label-shift', layers);
 el_timeline.style.setProperty('--duration', timeline.duration);
