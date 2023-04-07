@@ -377,18 +377,24 @@ for (let event of timeline.events)
     j++;
 }
 
-html += '</div></div>'
+html += '</div></div><div id="dpi"></div>'
 
 html += css();
 
 document.body.innerHTML = html;
 
+let viewport = document.createElement('meta');
+viewport.setAttribute('name', 'viewport');
+viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0');
+document.head.appendChild(viewport);
+
 //
 
 var updateDBtout = null;
+let screenWidthCm = screen.width / document.getElementById('dpi').offsetWidth;
 
 var minZoom = 95 / timeline.duration;
-var maxZoom = timeline.duration < 30 ? 300 / timeline.duration : 4;
+var maxZoom = timeline.duration < 30 ? 300 / timeline.duration : (screenWidthCm < 15 ? 14 : 4);
 
 var zoom = window.localStorage.getItem('zoom') || Math.max(minZoom, 3);
 
@@ -426,8 +432,34 @@ function onScroll(e) {
     }, 200);
 };
 
+let touchCache = {};
+function onTouch(e) {
+    if (e.changedTouches.length == 2) {
+        let p1 = e.changedTouches[0];
+        let p2 = e.changedTouches[1];
+
+        let o1 = touchCache[p1.identifier];
+        let o2 = touchCache[p2.identifier];
+
+        if (o1 && o2) {
+            let deltaX = Math.abs(o2.clientX - o1.clientX) - Math.abs(p2.clientX - p1.clientX);
+            let deltaY = Math.abs(o2.clientY - o1.clientY) - Math.abs(p2.clientY - p1.clientY);
+
+            onScroll({deltaY: deltaX+deltaY, getModifierState(k) {if (k == 'Shift') return true;}})
+        }
+
+        touchCache[p1.identifier] = p1;
+        touchCache[p2.identifier] = p2;
+    } else {
+        touchCache = {};
+    }
+}
+
 document.body.addEventListener("wheel", onScroll);
 el_timeline.parentNode.addEventListener("scroll", onScroll);
+
+// Touch
+el_timeline.parentNode.addEventListener("touchmove", onTouch);
 
 // Every 5 minutes
 setInterval(() =>
@@ -566,6 +598,13 @@ body\
     transform: translateX(-2px);\
     transition: .4s top ease-in-out;\
     width: calc(80vh - 130% * 2);\
+}\
+#dpi\
+{\
+    height: 1cm;\
+    width: 1cm;\
+    left: 100%;\
+    position: fixed;\
 }\
 </style>";
 }
