@@ -1,3 +1,8 @@
+> [!NOTE]  
+> This project has recently moved to [codeberg.org](https://codeberg.org/leso-kn/tineline).
+
+<br/>
+
 [![Demo: View In Browser](https://img.shields.io/static/v1?label=Demo&message=View%20in%20Browser&color=blue)](https://leso-kn.github.io/tineline/example.htm)
 
 # Tineline 🕒
